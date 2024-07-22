@@ -10,14 +10,6 @@ pipeline {
         stage('Check Docker') {
             steps {
                 sh 'docker --version'
-                sh '''
-                if ! [ -x "$(command -v docker-compose)" ]; then
-                    curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o docker-compose
-                    chmod +x docker-compose
-                    mv docker-compose /usr/local/bin/docker-compose
-                fi
-                docker-compose --version
-                '''
             }
         }
         
@@ -26,20 +18,6 @@ pipeline {
                 dir('workspace') {
                     git branch: 'main', url: 'https://github.com/vroomtest/NGINX_Test'
                 }
-            }
-        }
-
-        stage('Install Composer') {
-            steps {
-                sh '''
-                if ! [ -x "$(command -v composer)" ]; then
-                    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-                    php composer-setup.php
-                    php -r "unlink('composer-setup.php');"
-                    mv composer.phar /usr/local/bin/composer
-                fi
-                composer --version
-                '''
             }
         }
 
@@ -64,11 +42,11 @@ pipeline {
                     script {
                         sh '''
                             set +e
-                            /usr/local/bin/docker-compose -f ../../compose up -d nginx php-fpm
+                            docker-compose -f ../../compose up -d nginx php-fpm
                             sleep 10
-                            /usr/local/bin/composer install
+                            composer install
                             vendor/bin/phpunit --log-junit integration-test-results.xml
-                            /usr/local/bin/docker-compose -f ../../compose down
+                            docker-compose -f ../../compose down
                             set -e
                         '''
                     }
@@ -82,12 +60,12 @@ pipeline {
                     script {
                         sh '''
                             set +e
-                            /usr/local/bin/docker-compose -f ../../compose up -d nginx php-fpm
+                            docker-compose -f ../../compose up -d nginx php-fpm
                             sleep 10
                             curl -s http://127.0.0.1 | grep "<title>Login</title>" || echo "Nginx app did not start"
                             curl -s -X POST -F "password=StrongPass123" http://127.0.0.1 | grep "Welcome" || echo "Failed strong password test"
                             curl -s -X POST -F "password=password" http://127.0.0.1 | grep "Password is too common" || echo "Failed common password test"
-                            /usr/local/bin/docker-compose -f ../../compose down
+                            docker-compose -f ../../compose down
                             set -e
                         '''
                     }
@@ -98,7 +76,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('workspace/webapp') {
-                    sh 'test -f Dockerfile || echo "Dockerfile not found in the expected directory."'
                     sh 'docker build -t webapp .'
                 }
             }
