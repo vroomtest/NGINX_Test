@@ -10,6 +10,7 @@ pipeline {
         stage('Check Docker') {
             steps {
                 sh 'docker --version'
+                sh 'docker-compose --version || sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose'
             }
         }
         
@@ -18,6 +19,15 @@ pipeline {
                 dir('workspace') {
                     git branch: 'main', url: 'https://github.com/vroomtest/NGINX_Test'
                 }
+            }
+        }
+
+        stage('Install Composer') {
+            steps {
+                sh 'php -r "copy(\'https://getcomposer.org/installer\', \'composer-setup.php\');"'
+                sh 'php composer-setup.php'
+                sh 'php -r "unlink(\'composer-setup.php\');"'
+                sh 'mv composer.phar /usr/local/bin/composer'
             }
         }
 
@@ -76,6 +86,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('workspace/webapp') {
+                    sh 'test -f Dockerfile || echo "Dockerfile not found in the expected directory."'
                     sh 'docker build -t webapp .'
                 }
             }
