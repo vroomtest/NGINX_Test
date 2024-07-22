@@ -60,12 +60,13 @@ pipeline {
                     script {
                         sh '''
                             set +e
-                            docker-compose -f ../../compose up -d nginx php-fpm
+                            docker run -d --name webapp_nginx -p 127.0.0.1:80:80 -v $(pwd):/usr/share/nginx/html:ro nginx
                             sleep 10
                             curl -s http://127.0.0.1 | grep "<title>Login</title>" || echo "Nginx app did not start"
                             curl -s -X POST -F "password=StrongPass123" http://127.0.0.1 | grep "Welcome" || echo "Failed strong password test"
                             curl -s -X POST -F "password=password" http://127.0.0.1 | grep "Password is too common" || echo "Failed common password test"
-                            docker-compose -f ../../compose down
+                            docker stop webapp_nginx
+                            docker rm webapp_nginx
                             set -e
                         '''
                     }
