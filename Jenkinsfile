@@ -10,7 +10,14 @@ pipeline {
         stage('Check Docker') {
             steps {
                 sh 'docker --version'
-                sh 'docker-compose --version || sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose'
+                sh '''
+                if ! [ -x "$(command -v docker-compose)" ]; then
+                    curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o docker-compose
+                    chmod +x docker-compose
+                    mv docker-compose /usr/local/bin/docker-compose
+                fi
+                docker-compose --version
+                '''
             }
         }
         
@@ -24,10 +31,15 @@ pipeline {
 
         stage('Install Composer') {
             steps {
-                sh 'php -r "copy(\'https://getcomposer.org/installer\', \'composer-setup.php\');"'
-                sh 'php composer-setup.php'
-                sh 'php -r "unlink(\'composer-setup.php\');"'
-                sh 'mv composer.phar /usr/local/bin/composer'
+                sh '''
+                if ! [ -x "$(command -v composer)" ]; then
+                    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+                    php composer-setup.php
+                    php -r "unlink('composer-setup.php');"
+                    mv composer.phar /usr/local/bin/composer
+                fi
+                composer --version
+                '''
             }
         }
 
