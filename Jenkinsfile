@@ -42,11 +42,11 @@ pipeline {
                     script {
                         sh '''
                             set +e
-                            docker-compose -f ../../compose up -d nginx php-fpm
+                            /usr/local/bin/docker-compose -f ../../compose up -d nginx php-fpm
                             sleep 10
-                            composer install
+                            /usr/local/bin/composer install
                             vendor/bin/phpunit --log-junit integration-test-results.xml
-                            docker-compose -f ../../compose down
+                            /usr/local/bin/docker-compose -f ../../compose down
                             set -e
                         '''
                     }
@@ -60,12 +60,12 @@ pipeline {
                     script {
                         sh '''
                             set +e
-                            docker-compose -f ../../compose up -d nginx php-fpm
+                            /usr/local/bin/docker-compose -f ../../compose up -d nginx php-fpm
                             sleep 10
                             curl -s http://127.0.0.1 | grep "<title>Login</title>" || echo "Nginx app did not start"
                             curl -s -X POST -F "password=StrongPass123" http://127.0.0.1 | grep "Welcome" || echo "Failed strong password test"
                             curl -s -X POST -F "password=password" http://127.0.0.1 | grep "Password is too common" || echo "Failed common password test"
-                            docker-compose -f ../../compose down
+                            /usr/local/bin/docker-compose -f ../../compose down
                             set -e
                         '''
                     }
