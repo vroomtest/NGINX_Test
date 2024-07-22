@@ -1,0 +1,59 @@
+version: '3.8'  # Specify the version of the Docker Compose file format
+
+services:
+  # Jenkins service configuration
+  jenkins:
+    build: 
+      context: ./jenkins
+      dockerfile: Dockerfile
+      args:
+        GIT_USER_NAME: "test"
+        GIT_USER_EMAIL: "test@gmail.com"
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false 
+
+  # SonarQube service configuration
+  sonarqube:
+    image: sonarqube:lts
+    ports:
+      - "9000:9000"  
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true  
+      - SONARQUBE_JDBC_URL=jdbc:mysql://db:3306/sonarqube
+      - SONARQUBE_JDBC_USERNAME=sonarqube  
+      - SONARQUBE_JDBC_PASSWORD=sonarqube  
+
+  # MySQL database service configuration
+  db:
+    image: mysql:latest   
+    environment:
+      MYSQL_ROOT_PASSWORD: P@ssw0rdqwe!@
+      MYSQL_DATABASE: sonarqube  
+      MYSQL_USER: sonarqube  
+      MYSQL_PASSWORD: sonarqube  
+  
+    # Nginx service configuration
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./webapp:/usr/share/nginx/html:ro
+    depends_on:
+      - php-fpm
+
+  # PHP-FPM service configuration
+  php-fpm:
+    image: php:fpm
+    volumes:
+      - ./webapp:/var/www/html
+
+volumes:
+  jenkins_home:  
