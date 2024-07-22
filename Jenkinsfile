@@ -42,11 +42,11 @@ pipeline {
                     script {
                         sh '''
                             set +e
-                            docker-compose up -d nginx php-fpm
+                            docker-compose -f ../../compose up -d nginx php-fpm
                             sleep 10
                             composer install
                             vendor/bin/phpunit --log-junit integration-test-results.xml
-                            docker-compose down
+                            docker-compose -f ../../compose down
                             set -e
                         '''
                     }
@@ -60,12 +60,12 @@ pipeline {
                     script {
                         sh '''
                             set +e
-                            docker-compose up -d nginx php-fpm
+                            docker-compose -f ../../compose up -d nginx php-fpm
                             sleep 10
                             curl -s http://127.0.0.1 | grep "<title>Login</title>" || echo "Nginx app did not start"
                             curl -s -X POST -F "password=StrongPass123" http://127.0.0.1 | grep "Welcome" || echo "Failed strong password test"
                             curl -s -X POST -F "password=password" http://127.0.0.1 | grep "Password is too common" || echo "Failed common password test"
-                            docker-compose down
+                            docker-compose -f ../../compose down
                             set -e
                         '''
                     }
@@ -99,24 +99,12 @@ pipeline {
                 }
             }
         }
-        
-        stage('Deploy Web App') {
-            steps {
-                script {
-                    echo 'Deploying Web App...'
-                    sh 'docker ps --filter publish=80 --format "{{.ID}}" | xargs -r docker stop'
-                    sh 'docker ps -a --filter status=exited --filter publish=80 --format "{{.ID}}" | xargs -r docker rm'
-                    sh 'docker run -d -p 80:80 webapp'
-                    sh 'sleep 10'
-                }
-            }
-        }
     }
     
     post {
         failure {
             script {
-                echo 'Build failed, not deploying Web app.'
+                echo 'Build failed.'
             }
         }
         always {
