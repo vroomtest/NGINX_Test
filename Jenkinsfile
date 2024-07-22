@@ -16,7 +16,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 dir('workspace') {
-                    git branch: 'main', url: 'https://github.com/vroomtest/Practical_Test'
+                    git branch: 'main', url: 'https://github.com/vroomtest/NGINX_Test'
                 }
             }
         }
